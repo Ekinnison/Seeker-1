@@ -1,0 +1,101 @@
+# =====================================================================
+#  AUCTION SCANNER SETTINGS
+#  Edit this file to change what you're looking for. Save + commit and
+#  the next scheduled run picks it up automatically.
+# =====================================================================
+
+settings:
+  home: "Lexington, NE"          # city + state or a ZIP; used for radius_miles
+  ntfy_server: "https://ntfy.sh"   # your topic name goes in the NTFY_TOPIC secret, not here
+  max_alerts_per_run: 15           # extras roll over to the next run
+  request_delay_seconds: 3         # pause between page loads (be polite to sites)
+  allow_unknown_location: true     # alert even when a listing's location can't be read
+  exclude_everywhere:              # skip any listing containing these, for every watch
+    - "parts only"
+    - "for parts"
+    - "salvage title"
+
+# ---------------------------------------------------------------------
+#  WATCHES: what you're hunting for. Add as many as you want.
+#
+#  search_terms   words typed into each site's search box
+#  include_any    the TITLE must contain at least one of these
+#  exclude_any    skip if the title/description contains any of these
+#  min_price / max_price   in dollars (current bid or asking price)
+#  states         only these states (leave out for anywhere)
+#  radius_miles   only within this distance of your home
+#  condition      reject_any: deal-breaker words
+#                 require_any: must mention at least one (leave [] to skip)
+#  sources        optional: limit this watch to certain site names
+#  enabled        set false to pause a watch without deleting it
+# ---------------------------------------------------------------------
+watches:
+  - name: Zero-turn mower
+    search_terms: ["zero turn mower"]
+    include_any: ["zero turn", "zero-turn", "ztr"]
+    exclude_any: ["deck only", "blades", "tire", "seat only", "cover"]
+    min_price: 300
+    max_price: 3500
+    radius_miles: 150
+    condition:
+      reject_any: ["not running", "does not run", "doesn't run", "non running",
+                   "non-running", "seized", "needs engine", "blown engine"]
+      require_any: []
+
+  - name: Riding mower / lawn tractor
+    search_terms: ["riding mower", "lawn tractor"]
+    include_any: ["riding mower", "lawn tractor", "garden tractor", "lawn mower"]
+    exclude_any: ["push mower", "deck only", "parts"]
+    max_price: 1500
+    radius_miles: 100
+    condition:
+      reject_any: ["not running", "does not run", "doesn't run", "seized"]
+      require_any: []
+
+  - name: Utility trailer
+    enabled: false
+    search_terms: ["utility trailer"]
+    include_any: ["trailer"]
+    exclude_any: ["camper", "horse", "gooseneck"]
+    max_price: 2000
+    states: ["NE", "KS"]
+    condition:
+      reject_any: ["no title", "no paperwork"]
+      require_any: []
+
+# ---------------------------------------------------------------------
+#  SOURCES: the auction sites to check.
+#
+#  To add a site:
+#   1. Search the site in your browser for something (e.g. "mower").
+#   2. Copy the URL from the address bar. Replace your search word
+#      with {query}. Add any site filters (category, state) you like.
+#   3. Run the workflow in "inspect" mode with that URL (see README)
+#      and paste the output to Claude to get the selectors below.
+#   4. Run "test" mode to confirm it finds listings, then enable it.
+#
+#  selectors (CSS):
+#   item      one listing card on the results page (required)
+#   title     title inside the card (required)
+#   link      link inside the card (default: first link)
+#   price     current bid / price
+#   location  city/state text
+#   ends      closing time
+#  detail_description  optional: CSS selector for the full description
+#      on the listing's own page. Only opened for listings that already
+#      match, so condition words in the full write-up get checked too.
+# ---------------------------------------------------------------------
+sources:
+  - name: Example Auction Site
+    enabled: false
+    search_url: "https://www.example-auction-site.com/search?q={query}"
+    render: true              # true = real browser (needed for most modern sites)
+    wait_for: ".lot-card"     # optional: wait until this appears
+    selectors:
+      item: ".lot-card"
+      title: ".lot-title"
+      link: "a"
+      price: ".current-bid"
+      location: ".lot-location"
+      ends: ".time-left"
+    detail_description: ".lot-description"
